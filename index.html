@@ -628,6 +628,7 @@
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -1272,14 +1273,18 @@ function downloadDoc() {
   showModal();
   setTimeout(() => {
     const content = document.getElementById('doc-content').innerHTML;
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <style>body{font-family:'Times New Roman',serif;font-size:12pt;padding:60px 72px;color:#000;line-height:1.8;max-width:700px;margin:auto;}table{width:100%;border-collapse:collapse;}</style>
-    </head><body>${content}</body></html>`;
-    const blob = new Blob([html], {type:'text/html'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'MAA_er_Doa_Application.html';
-    a.click();
+    const element = document.createElement('div');
+    element.innerHTML = content;
+    
+    const options = {
+      margin: 10,
+      filename: 'MAA_er_Doa_Application.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    };
+    
+    html2pdf().set(options).from(element).save();
   }, 600);
 }
 
