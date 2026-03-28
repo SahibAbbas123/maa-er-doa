@@ -1185,7 +1185,7 @@ function generatePreview() {
     ? `<img src="${signDataUrl}" style="max-width:100%;max-height:100%;object-fit:contain;">`
     : '';
 
-  const extraReason = customReason ? `<p style="margin-top:10px;"><strong>অতিরিক্ত তথ্য:</strong> ${customReason}</p>` : '';
+  const extraReason = customReason ? `<p style="margin-top:10px;color:#000;"><strong>অতিরিক্ত তথ্য:</strong> ${customReason}</p>` : '';
 
   const doc = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
@@ -1193,67 +1193,67 @@ function generatePreview() {
         ${photoEl}
       </div>
     </div>
-    <div style="text-align:right;margin-bottom:24px;">${dateStr}</div>
+    <div style="text-align:right;margin-bottom:24px;color:#000;font-family:Times New Roman,serif;font-size:11pt;">${dateStr}</div>
 
-    <div style="margin-bottom:16px;">
+    <div style="margin-bottom:16px;color:#000;font-family:Times New Roman,serif;font-size:11pt;">
       <strong>বরাবর</strong><br>
       প্রধান শিক্ষক / সংশ্লিষ্ট শিক্ষক<br>
       শহীদ স্মৃতি সরকারি উচ্চ বিদ্যালয় ও কলেজ<br>
       ঢাকা।
     </div>
 
-    <div style="text-align:center;font-weight:bold;font-size:13pt;text-decoration:underline;margin:20px 0;">
+    <div style="text-align:center;font-weight:bold;font-size:13pt;text-decoration:underline;margin:20px 0;color:#000;font-family:Times New Roman,serif;">
       বিষয়: ${typeData.subject}।
     </div>
 
-    <div style="text-align:justify;">
+    <div style="text-align:justify;color:#000;font-family:Times New Roman,serif;font-size:11pt;line-height:1.8;">
       <p>${typeData.body}</p>
       ${extraReason}
-      <p>নিবেদক,</p>
+      <p style="color:#000;">নিবেদক,</p>
     </div>
 
-    <table style="width:100%;margin-top:24px;border-collapse:collapse;font-size:11pt;">
+    <table style="width:100%;margin-top:24px;border-collapse:collapse;font-size:11pt;color:#000;font-family:Times New Roman,serif;">
       <tr>
-        <td style="padding:3px 0;width:40%;">নাম:</td>
-        <td style="padding:3px 0;"><strong>${name}</strong></td>
+        <td style="padding:3px 0;width:40%;color:#000;">নাম:</td>
+        <td style="padding:3px 0;color:#000;"><strong>${name}</strong></td>
       </tr>
       <tr>
-        <td style="padding:3px 0;">ছাত্র আইডি / রোল:</td>
-        <td style="padding:3px 0;">${id}</td>
+        <td style="padding:3px 0;color:#000;">ছাত্র আইডি / রোল:</td>
+        <td style="padding:3px 0;color:#000;">${id}</td>
       </tr>
       <tr>
-        <td style="padding:3px 0;">সেশন:</td>
-        <td style="padding:3px 0;">${session}</td>
+        <td style="padding:3px 0;color:#000;">সেশন:</td>
+        <td style="padding:3px 0;color:#000;">${session}</td>
       </tr>
       <tr>
-        <td style="padding:3px 0;">পিতার নাম:</td>
-        <td style="padding:3px 0;">${father}</td>
+        <td style="padding:3px 0;color:#000;">পিতার নাম:</td>
+        <td style="padding:3px 0;color:#000;">${father}</td>
       </tr>
       <tr>
-        <td style="padding:3px 0;">মাতার নাম:</td>
-        <td style="padding:3px 0;">${mother}</td>
+        <td style="padding:3px 0;color:#000;">মাতার নাম:</td>
+        <td style="padding:3px 0;color:#000;">${mother}</td>
       </tr>
       <tr>
-        <td style="padding:3px 0;">বর্তমান ঠিকানা:</td>
-        <td style="padding:3px 0;">${presentAddr}</td>
+        <td style="padding:3px 0;color:#000;">বর্তমান ঠিকানা:</td>
+        <td style="padding:3px 0;color:#000;">${presentAddr}</td>
       </tr>
       <tr>
-        <td style="padding:3px 0;">স্থায়ী ঠিকানা:</td>
-        <td style="padding:3px 0;">${permAddr}, পোস্টাল: ${postal}</td>
+        <td style="padding:3px 0;color:#000;">স্থায়ী ঠিকানা:</td>
+        <td style="padding:3px 0;color:#000;">${permAddr}, পোস্টাল: ${postal}</td>
       </tr>
       <tr>
-        <td style="padding:3px 0;">মোবাইল:</td>
-        <td style="padding:3px 0;">${phone}</td>
+        <td style="padding:3px 0;color:#000;">মোবাইল:</td>
+        <td style="padding:3px 0;color:#000;">${phone}</td>
       </tr>
     </table>
 
     <div style="margin-top:48px;display:flex;justify-content:flex-end;">
-      <div style="text-align:center;">
+      <div style="text-align:center;color:#000;">
         <div style="width:120px;height:45px;border-bottom:1px solid #000;display:flex;align-items:center;justify-content:center;overflow:hidden;">
           ${signEl}
         </div>
-        <div style="margin-top:4px;font-size:10pt;">আবেদনকারীর স্বাক্ষর</div>
-        <div style="font-size:10pt;margin-top:2px;">${name}</div>
+        <div style="margin-top:4px;font-size:10pt;color:#000;font-family:Times New Roman,serif;">আবেদনকারীর স্বাক্ষর</div>
+        <div style="font-size:10pt;margin-top:2px;color:#000;font-family:Times New Roman,serif;">${name}</div>
       </div>
     </div>
   `;
@@ -1275,12 +1275,13 @@ function downloadDoc() {
     const content = document.getElementById('doc-content').innerHTML;
     const element = document.createElement('div');
     element.innerHTML = content;
+    element.style.cssText = 'color: #000; background: white; padding: 20px; width: 100%; margin: 0; font-family: Times New Roman, serif;';
     
     const options = {
       margin: 10,
       filename: 'MAA_er_Doa_Application.pdf',
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
       jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
     };
     
