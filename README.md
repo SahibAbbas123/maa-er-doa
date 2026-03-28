@@ -7,6 +7,7 @@
 
 ![Landing Page](assets/landing.png)
 ![Profile Page](assets/profile.png)
+![Prayer Modal](assets/prayer.png)
 
 # Tech Stack
 

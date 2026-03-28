@@ -1273,19 +1273,53 @@ function downloadDoc() {
   showModal();
   setTimeout(() => {
     const content = document.getElementById('doc-content').innerHTML;
-    const element = document.createElement('div');
-    element.innerHTML = content;
-    element.style.cssText = 'color: #000; background: white; padding: 20px; width: 100%; margin: 0; font-family: Times New Roman, serif;';
-    
+
+    // Create a fully isolated wrapper injected into a hidden iframe
+    // so dark-theme body styles cannot bleed in
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = [
+      'all: initial',
+      'display: block',
+      'background: #ffffff',
+      'color: #000000',
+      'font-family: "Times New Roman", Times, serif',
+      'font-size: 12pt',
+      'line-height: 1.8',
+      'padding: 0',
+      'margin: 0',
+      'width: 794px',          // A4 at 96 dpi
+    ].join(';');
+    wrapper.innerHTML = content;
+
+    // Force every element inside to be fully opaque black text
+    const styleReset = document.createElement('style');
+    styleReset.textContent = `
+      * {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        opacity: 1 !important;
+        background-color: transparent !important;
+      }
+      strong, b { font-weight: bold !important; }
+      table { border-collapse: collapse !important; }
+    `;
+    wrapper.prepend(styleReset);
+
     const options = {
-      margin: 10,
+      margin: [10, 10, 10, 10],
       filename: 'MAA_er_Doa_Application.pdf',
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        removeContainer: true,
+      },
       jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
     };
-    
-    html2pdf().set(options).from(element).save();
+
+    html2pdf().set(options).from(wrapper).save();
   }, 600);
 }
 
