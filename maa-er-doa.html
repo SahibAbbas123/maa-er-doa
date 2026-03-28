@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAA এর x দোয়া — Application Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Noto+Sans+Bengali:wght@400;600;700&family=Times+New+Roman&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #141618;
+    --surface: #1c1f23;
+    --surface2: #23272d;
+    --surface3: #2c3038;
+    --glass: rgba(28, 31, 35, 0.72);
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.10);
+    --border3: rgba(99,210,210,0.18);
+    --text: #e8edf2;
+    --text2: #8a94a0;
+    --text3: #4a5260;
+    --accent: #2ec4c4;
+    --accent2: #5de8d4;
+    --accent-dim: rgba(46, 196, 196, 0.12);
+    --accent-glow: rgba(46, 196, 196, 0.25);
+    --green: #3ecf82;
+    --red: #e05c6a;
+    --gold: #e8b84b;
+    --purple: #8b79f7;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --shadow: 0 24px 80px rgba(0,0,0,0.55);
+    --shadow-teal: 0 16px 48px rgba(46,196,196,0.12);
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-bn: 'Noto Sans Bengali', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse 120% 80% at 70% -20%, rgba(46,196,196,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at -10% 80%, rgba(93,232,212,0.04) 0%, transparent 55%);
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: 0.018;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+  }
+
+  /* ── LOADING SCREEN ── */
+  #loading {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 28px;
+    transition: opacity 0.7s ease, visibility 0.7s;
+  }
+  #loading.hide { opacity: 0; visibility: hidden; }
+  .load-logo {
+    font-family: var(--font-bn);
+    font-size: 2rem; font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .load-logo span { color: var(--accent); }
+  .load-bar-wrap {
+    width: 200px; height: 1.5px;
+    background: var(--surface3);
+    border-radius: 99px; overflow: hidden;
+  }
+  .load-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    box-shadow: 0 0 12px var(--accent-glow);
+    animation: loadfill 1.8s cubic-bezier(0.25,1,0.5,1) forwards;
+  }
+  @keyframes loadfill { to { width: 100%; } }
+  .load-sub {
+    font-size: 0.72rem; color: var(--text3);
+    font-family: var(--font-mono);
+    letter-spacing: 0.12em;
+    animation: blink 1.2s ease infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  /* ── PAGE SYSTEM ── */
+  .page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  .page.active { display: block; }
+  .fade-in { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) forwards; }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(18px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  /* ── MACOS TITLEBAR ── */
+  .titlebar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 52px;
+    background: rgba(20,22,24,0.82);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 20px;
+  }
+  .mac-dots { display: flex; gap: 7px; }
+  .mac-dot {
+    width: 13px; height: 13px; border-radius: 50%;
+    cursor: pointer; transition: filter 0.2s;
+  }
+  .mac-dot:hover { filter: brightness(1.3); }
+  .mac-dot.red { background: #ff5f57; }
+  .mac-dot.yellow { background: #febc2e; }
+  .mac-dot.green { background: #28c840; }
+  .titlebar-center {
+    flex: 1; text-align: center;
+    font-size: 0.78rem; color: var(--text3); font-weight: 500;
+    letter-spacing: 0.03em; font-family: var(--font-mono);
+  }
+  .titlebar-right {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .nav-btn {
+    background: none; border: 1px solid var(--border2);
+    color: var(--text2); font-family: var(--font-body);
+    font-size: 0.73rem; padding: 5px 13px; border-radius: 7px;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.01em;
+  }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border3); }
+  .nav-btn.active {
+    background: var(--accent-dim); border-color: var(--accent);
+    color: var(--accent); font-weight: 600;
+  }
+
+  /* ── LANDING PAGE ── */
+  #page-landing { padding-top: 52px; }
+
+  /* Hero */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    overflow: hidden; padding: 80px 24px 60px;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% -5%, rgba(46,196,196,0.09) 0%, transparent 65%),
+      radial-gradient(ellipse 35% 40% at 90% 85%, rgba(93,232,212,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 25% 30% at 5% 60%, rgba(139,121,247,0.04) 0%, transparent 55%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; z-index: 0; opacity: 0.03;
+    background-image:
+      linear-gradient(rgba(46,196,196,0.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(46,196,196,0.6) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  .hero-content { position: relative; z-index: 1; text-align: center; max-width: 800px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--glass); border: 1px solid var(--border3);
+    border-radius: 99px; padding: 6px 18px 6px 10px;
+    font-size: 0.74rem; color: var(--text2); margin-bottom: 36px;
+    backdrop-filter: blur(12px);
+  }
+  .hero-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(0.8)} }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 6.5vw, 5.2rem);
+    font-weight: 900;
+    line-height: 1.06;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .hero-title .bn {
+    font-family: var(--font-bn);
+    display: block;
+    background: linear-gradient(130deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 32px rgba(46,196,196,0.3));
+  }
+  .hero-sub {
+    font-size: 0.97rem; color: var(--text2); margin: 20px auto 40px;
+    line-height: 1.75; max-width: 520px;
+    font-family: var(--font-bn);
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--accent); color: #0a1414;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: 0.92rem; padding: 14px 32px; border-radius: 99px;
+    border: none; cursor: pointer;
+    box-shadow: 0 8px 32px var(--accent-glow), 0 2px 0 rgba(255,255,255,0.15) inset;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    letter-spacing: 0.01em;
+  }
+  .hero-cta:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 16px 56px rgba(46,196,196,0.4);
+    background: var(--accent2);
+  }
+  .hero-cta:active { transform: translateY(0) scale(0.98); }
+  .cta-arrow { font-size: 1.05rem; transition: transform 0.2s; }
+  .hero-cta:hover .cta-arrow { transform: translateX(5px); }
+
+  /* School image */
+  .school-card {
+    margin: 0 auto 80px; max-width: 900px; padding: 0 24px;
+    position: relative; z-index: 1;
+  }
+  .school-img-wrap {
+    border-radius: 20px; overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow), 0 0 0 1px rgba(46,196,196,0.05);
+    position: relative;
+    background: var(--surface2);
+    aspect-ratio: 16/7;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .school-placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1a2228 0%, #141c22 50%, #161e22 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px;
+  }
+  .school-icon { font-size: 4rem; opacity: 0.22; }
+  .school-name { font-family: var(--font-bn); font-size: 1.3rem; color: var(--text3); font-weight: 600; }
+  .school-img-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(20,22,24,0.92) 0%, transparent 55%);
+    display: flex; align-items: flex-end; padding: 24px 28px;
+  }
+  .school-info-name { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); }
+  .school-info-sub { font-size: 0.78rem; color: var(--text2); margin-top: 4px; font-family: var(--font-bn); }
+
+  /* Stats */
+  .stats-section { padding: 60px 24px 100px; max-width: 1000px; margin: 0 auto; }
+  .stats-label {
+    font-size: 0.68rem; letter-spacing: 0.16em; color: var(--text3);
+    text-transform: uppercase; font-family: var(--font-mono);
+    margin-bottom: 32px; text-align: center;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 14px;
+  }
+  .stat-card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 18px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative; overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1.5px;
+  }
+  .stat-card.s1::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .stat-card.s2::before { background: linear-gradient(90deg, var(--red), #f0909a); }
+  .stat-card.s3::before { background: linear-gradient(90deg, var(--purple), #b8aef9); }
+  .stat-card.s4::before { background: linear-gradient(90deg, var(--green), #9ef7c8); }
+  .stat-card.s5::before { background: linear-gradient(90deg, var(--gold), #f5d88a); }
+  .stat-card.s6::before { background: linear-gradient(90deg, #f7906c, #f76c8c); }
+  .stat-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--border3);
+    background: var(--surface2);
+    box-shadow: var(--shadow-teal);
+  }
+  .stat-num {
+    font-family: var(--font-display); font-size: 2.3rem; font-weight: 900;
+    letter-spacing: -0.03em; line-height: 1;
+  }
+  .stat-card.s1 .stat-num { color: var(--accent); }
+  .stat-card.s2 .stat-num { color: var(--red); }
+  .stat-card.s3 .stat-num { color: var(--purple); }
+  .stat-card.s4 .stat-num { color: var(--green); }
+  .stat-card.s5 .stat-num { color: var(--gold); }
+  .stat-card.s6 .stat-num { color: #f7906c; }
+  .stat-label {
+    font-size: 0.71rem; color: var(--text2); margin-top: 10px;
+    font-family: var(--font-bn); line-height: 1.45;
+  }
+  .stat-emoji { font-size: 1.35rem; margin-bottom: 8px; display: block; }
+
+  /* ── APPLICATION TYPE PAGE ── */
+  #page-type { padding-top: 72px; }
+  .page-header {
+    text-align: center; padding: 60px 24px 40px;
+  }
+  .page-header h2 {
+    font-family: var(--font-display); font-size: 2.3rem; font-weight: 900;
+    letter-spacing: -0.03em; color: var(--text);
+  }
+  .page-header p {
+    color: var(--text2); margin-top: 12px;
+    font-family: var(--font-bn); font-size: 0.93rem;
+  }
+
+  .type-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 18px; max-width: 1000px; margin: 0 auto; padding: 0 24px 80px;
+  }
+  .type-card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 18px; overflow: hidden;
+    cursor: pointer; transition: all 0.35s cubic-bezier(0.34,1.2,0.64,1);
+    position: relative; backdrop-filter: blur(10px);
+  }
+  .type-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: var(--accent);
+    box-shadow: 0 20px 60px rgba(46,196,196,0.15), 0 0 0 1px rgba(46,196,196,0.12);
+  }
+  .type-card-img {
+    height: 150px; display: flex; align-items: center; justify-content: center;
+    font-size: 3.6rem; position: relative; overflow: hidden;
+  }
+  .type-card-img::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, var(--surface));
+  }
+  .tc-admit { background: linear-gradient(135deg, #111e2a, #0d1620); }
+  .tc-fee   { background: linear-gradient(135deg, #101f1e, #0c1816); }
+  .tc-id    { background: linear-gradient(135deg, #1a1e28, #111620); }
+  .tc-mark  { background: linear-gradient(135deg, #1c1428, #140e20); }
+  .tc-late  { background: linear-gradient(135deg, #0e1e26, #091620); }
+  .tc-absent{ background: linear-gradient(135deg, #1a1622, #12101a); }
+  .tc-dress { background: linear-gradient(135deg, #1c1a28, #141220); }
+  .tc-book  { background: linear-gradient(135deg, #101e1c, #0c1816); }
+  .type-card-body { padding: 18px 20px 22px; }
+  .type-card-title {
+    font-family: var(--font-bn); font-size: 1.02rem; font-weight: 700;
+    margin-bottom: 6px; color: var(--text);
+  }
+  .type-card-sub {
+    font-size: 0.78rem; color: var(--text2); line-height: 1.55;
+    font-family: var(--font-bn);
+  }
+  .type-card-badge {
+    position: absolute; top: 11px; right: 11px; z-index: 2;
+    background: rgba(46,196,196,0.12); border: 1px solid rgba(46,196,196,0.3);
+    font-size: 0.63rem; padding: 3px 9px; border-radius: 99px;
+    font-family: var(--font-mono); color: var(--accent);
+    backdrop-filter: blur(8px);
+  }
+
+  /* ── FORM PAGE ── */
+  #page-form { padding-top: 72px; }
+  .form-wrap { max-width: 700px; margin: 0 auto; padding: 40px 24px 80px; }
+  .form-back {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--text2); font-size: 0.82rem; cursor: pointer;
+    margin-bottom: 32px; transition: color 0.2s;
+    background: none; border: none;
+  }
+  .form-back:hover { color: var(--accent); }
+  .form-title {
+    font-family: var(--font-display); font-size: 2rem; font-weight: 900;
+    letter-spacing: -0.03em; margin-bottom: 8px;
+  }
+  .form-subtitle { font-size: 0.84rem; color: var(--text2); margin-bottom: 36px; font-family: var(--font-bn); }
+  .form-selected-type {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent-dim); border: 1px solid rgba(46,196,196,0.25);
+    border-radius: 99px; padding: 5px 14px;
+    font-size: 0.79rem; color: var(--accent); margin-bottom: 28px;
+    font-family: var(--font-bn);
+  }
+  .form-section { margin-bottom: 32px; }
+  .form-section-label {
+    font-size: 0.66rem; letter-spacing: 0.14em; color: var(--text3);
+    text-transform: uppercase; font-family: var(--font-mono);
+    margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    display: block; font-size: 0.77rem; color: var(--text2);
+    margin-bottom: 7px; font-family: var(--font-bn);
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font-body); font-size: 0.88rem;
+    padding: 11px 14px; outline: none; transition: all 0.2s;
+    -webkit-appearance: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim), 0 0 12px rgba(46,196,196,0.08);
+  }
+  .form-input::placeholder { color: var(--text3); }
+  .form-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  .form-select option { background: var(--surface2); }
+  .upload-zone {
+    border: 1.5px dashed var(--border2); border-radius: var(--radius);
+    padding: 28px 20px; text-align: center; cursor: pointer;
+    transition: all 0.22s; position: relative; overflow: hidden;
+    background: var(--surface);
+  }
+  .upload-zone:hover {
+    border-color: var(--accent); border-style: solid;
+    background: var(--accent-dim);
+    box-shadow: 0 0 20px rgba(46,196,196,0.06);
+  }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+  .upload-label { font-size: 0.81rem; color: var(--text2); font-family: var(--font-bn); }
+  .upload-hint { font-size: 0.69rem; color: var(--text3); margin-top: 4px; }
+  .upload-preview {
+    width: 60px; height: 70px; border-radius: 6px; object-fit: cover;
+    border: 1px solid var(--border3); margin: 8px auto 0; display: none;
+  }
+  .form-submit {
+    width: 100%; padding: 14px; border-radius: var(--radius);
+    background: var(--accent); border: none; color: #081414;
+    font-family: var(--font-body); font-size: 0.97rem; font-weight: 700;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.34,1.2,0.64,1);
+    margin-top: 8px; letter-spacing: 0.02em;
+    box-shadow: 0 6px 28px var(--accent-glow);
+  }
+  .form-submit:hover {
+    background: var(--accent2);
+    box-shadow: 0 10px 40px rgba(46,196,196,0.35);
+    transform: translateY(-2px);
+  }
+
+  /* ── PREVIEW PAGE ── */
+  #page-preview { padding-top: 72px; }
+  .preview-wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+  .preview-actions {
+    display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; align-items: center;
+  }
+  .action-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: var(--radius-sm);
+    font-family: var(--font-body); font-size: 0.84rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; border: 1px solid var(--border2);
+  }
+  .action-btn.primary {
+    background: var(--accent); border-color: var(--accent); color: #081414; font-weight: 700;
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .action-btn.secondary { background: var(--surface2); color: var(--text2); }
+  .action-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+  .preview-doc {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 60px 72px;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 1.8;
+    color: #000;
+    min-height: 900px;
+  }
+
+  /* ── PROFILE PAGE ── */
+  #page-profile { padding-top: 72px; }
+  .profile-wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+  .profile-header-card {
+    background: var(--glass); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px; display: flex;
+    gap: 28px; align-items: center; margin-bottom: 24px;
+    backdrop-filter: blur(14px);
+  }
+  .profile-avatar {
+    width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #1a2a2e, #0d1f22);
+    border: 2px solid rgba(46,196,196,0.25);
+    box-shadow: 0 0 0 4px rgba(46,196,196,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; overflow: hidden;
+  }
+  .profile-avatar svg { width: 70px; height: 70px; }
+  .profile-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text); }
+  .profile-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .profile-chip {
+    font-size: 0.73rem; color: var(--text2);
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 99px;
+    font-family: var(--font-bn);
+  }
+  .profile-stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 14px; margin-bottom: 24px;
+  }
+  .profile-stat {
+    background: var(--glass); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.25s;
+  }
+  .profile-stat:hover { border-color: var(--border3); transform: translateY(-2px); }
+  .profile-stat-num {
+    font-family: var(--font-display); font-size: 2rem;
+    font-weight: 900; letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+  .profile-stat-label { font-size: 0.74rem; color: var(--text2); margin-top: 4px; font-family: var(--font-bn); }
+
+  .contrib-section {
+    background: var(--glass); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px;
+    backdrop-filter: blur(10px);
+  }
+  .contrib-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .contrib-sub { font-size: 0.74rem; color: var(--text2); margin-bottom: 20px; font-family: var(--font-bn); }
+  .contrib-grid {
+    display: grid;
+    grid-template-columns: repeat(53, 1fr);
+    gap: 3px;
+  }
+  .contrib-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--surface3);
+    transition: all 0.18s;
+  }
+  .contrib-cell:hover { transform: scale(1.4); z-index: 1; box-shadow: 0 0 6px var(--accent-glow); }
+  .contrib-cell.l1 { background: rgba(46,196,196,0.18); }
+  .contrib-cell.l2 { background: rgba(46,196,196,0.40); }
+  .contrib-cell.l3 { background: rgba(46,196,196,0.68); }
+  .contrib-cell.l4 { background: var(--accent); box-shadow: 0 0 4px rgba(46,196,196,0.5); }
+
+  .recent-apps {
+    margin-top: 20px; background: var(--glass); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; backdrop-filter: blur(10px);
+  }
+  .recent-apps-header { padding: 18px 24px; border-bottom: 1px solid var(--border); }
+  .recent-apps-header h3 { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+  .recent-app-row {
+    padding: 13px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    transition: background 0.18s;
+  }
+  .recent-app-row:last-child { border-bottom: none; }
+  .recent-app-row:hover { background: rgba(46,196,196,0.04); }
+  .recent-app-icon { font-size: 1.3rem; }
+  .recent-app-info { flex: 1; }
+  .recent-app-name { font-size: 0.84rem; font-family: var(--font-bn); color: var(--text); }
+  .recent-app-date { font-size: 0.7rem; color: var(--text3); margin-top: 2px; font-family: var(--font-mono); }
+  .status-pill {
+    font-size: 0.66rem; padding: 3px 10px; border-radius: 99px;
+    font-family: var(--font-mono);
+  }
+  .status-pending  { background: rgba(232,184,75,0.12); color: var(--gold); border: 1px solid rgba(232,184,75,0.28); }
+  .status-rejected { background: rgba(224,92,106,0.1); color: var(--red); border: 1px solid rgba(224,92,106,0.24); }
+  .status-ripped   { background: rgba(180,60,70,0.1); color: #f07080; border: 1px solid rgba(180,60,70,0.22); }
+  .status-accepted { background: rgba(62,207,130,0.1); color: var(--green); border: 1px solid rgba(62,207,130,0.24); }
+
+  /* Print */
+  @media print {
+    .titlebar, #page-landing, #page-type, #page-form, .preview-actions, .preview-wrap > *:not(.preview-doc) { display: none !important; }
+    #page-preview { display: block !important; padding: 0; }
+    .preview-wrap { padding: 0; max-width: none; }
+    .preview-doc { box-shadow: none; }
+    body { background: white; }
+    body::before { display: none; }
+  }
+
+  /* Alert Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(10,14,16,0.75); backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: all 0.3s;
+  }
+  .modal-overlay.show { opacity: 1; visibility: visible; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border3);
+    border-radius: 22px; padding: 40px 48px; text-align: center;
+    max-width: 360px; width: 90%;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(46,196,196,0.08);
+    transform: scale(0.9) translateY(20px); transition: transform 0.4s cubic-bezier(0.34,1.4,0.64,1);
+  }
+  .modal-overlay.show .modal { transform: scale(1) translateY(0); }
+  .modal-dua { font-family: var(--font-bn); font-size: 1.35rem; font-weight: 700; color: var(--accent); line-height: 1.55; margin: 16px 0 8px; }
+  .modal-sub { font-size: 0.79rem; color: var(--text2); font-family: var(--font-bn); }
+  .modal-icon { font-size: 3rem; }
+  .modal-close {
+    margin-top: 24px; padding: 10px 30px; border-radius: 99px;
+    background: var(--accent); border: none; color: #081414;
+    font-family: var(--font-body); font-size: 0.84rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+  .modal-close:hover { background: var(--accent2); filter: brightness(1.08); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    .profile-header-card { flex-direction: column; text-align: center; }
+    .profile-stats-row { grid-template-columns: 1fr; }
+    .contrib-grid { grid-template-columns: repeat(26, 1fr); }
+    .preview-doc { padding: 30px 24px; font-size: 10pt; }
+    .hero-title { font-size: 2.3rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading">
+  <div class="load-logo">MAA <span>এর দোয়া</span></div>
+  <div class="load-bar-wrap"><div class="load-bar"></div></div>
+  <div class="load-sub">আবেদন প্রস্তুত হচ্ছে...</div>
+</div>
+
+<!-- Alert Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon">🤲</div>
+    <div class="modal-dua">MAA এর দোয়া তোমার সাথে থাকুক</div>
+    <div class="modal-sub">আল্লাহ তোমাকে রক্ষা করুন স্যারের হাত থেকে।</div>
+    <button class="modal-close" onclick="closeModal()">আমিন 🙏</button>
+  </div>
+</div>
+
+<!-- macOS Titlebar -->
+<div class="titlebar">
+  <div class="mac-dots">
+    <div class="mac-dot red"></div>
+    <div class="mac-dot yellow"></div>
+    <div class="mac-dot green"></div>
+  </div>
+  <div class="titlebar-center" id="titlebar-title">MAA এর দোয়া — Application Generator</div>
+  <div class="titlebar-right">
+    <button class="nav-btn active" id="nav-home" onclick="goPage('landing')">🏠 হোম</button>
+    <button class="nav-btn" id="nav-profile" onclick="goPage('profile')">👤 প্রোফাইল</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ LANDING PAGE ══════════════════════════ -->
+<div class="page active fade-in" id="page-landing">
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        স্যারের দরজায় যাওয়ার আগে — আবেদন করুন
+      </div>
+      <h1 class="hero-title">
+        When Strict Sir<br>Says "Application Daw"
+        <span class="bn">MAA এর দোয়া</span>
+      </h1>
+      <p class="hero-sub">
+        ভর্তি কার্ড হারিয়েছ? ব্যাংক রসিদ নেই? পরিচয়পত্র ভুলে এসেছ?<br>
+        চিন্তা নেই — MAA এর দোয়া আছে তোমার সাথে।
+      </p>
+      <button class="hero-cta" onclick="goPage('type')">
+        আবেদন তৈরি করুন <span class="cta-arrow">→</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="school-card">
+    <div class="school-img-wrap">
+      <div class="school-placeholder">
+        <div class="school-icon">🏫</div>
+        <div class="school-name">Shaheed Smrity Govt. High School & College</div>
+      </div>
+      <div class="school-img-overlay">
+        <div class="school-info">
+          <div class="school-info-name">Shaheed Smrity Govt. High School</div>
+          <div class="school-info-sub">প্রতিষ্ঠান — যেখানে স্যার রাজত্ব করেন</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="stats-section">
+    <div class="stats-label">স্যারের ভয়ংকর রেকর্ড ২০২৪–২৫</div>
+    <div class="stats-grid">
+      <div class="stat-card s1">
+        <span class="stat-emoji">📋</span>
+        <div class="stat-num" id="cnt-apps">0</div>
+        <div class="stat-label">মোট আবেদন চাওয়া হয়েছে</div>
+      </div>
+      <div class="stat-card s2">
+        <span class="stat-emoji">🚪</span>
+        <div class="stat-num" id="cnt-sent">0</div>
+        <div class="stat-label">ছাত্র তাড়িয়ে দেওয়া হয়েছে</div>
+      </div>
+      <div class="stat-card s3">
+        <span class="stat-emoji">📝</span>
+        <div class="stat-num" id="cnt-admits">0</div>
+        <div class="stat-label">ভর্তিপত্র ছাড়া ঢুকতে দেননি</div>
+      </div>
+      <div class="stat-card s4">
+        <span class="stat-emoji">🧾</span>
+        <div class="stat-num" id="cnt-fees">0</div>
+        <div class="stat-label">ব্যাংক রসিদ চেয়েছেন</div>
+      </div>
+      <div class="stat-card s5">
+        <span class="stat-emoji">❌</span>
+        <div class="stat-num" id="cnt-rejected">0</div>
+        <div class="stat-label">আবেদন বাতিল করেছেন</div>
+      </div>
+      <div class="stat-card s6">
+        <span class="stat-emoji">📄</span>
+        <div class="stat-num" id="cnt-ripped">0</div>
+        <div class="stat-label">আবেদন ছিঁড়ে ফেলেছেন</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════════════ TYPE PAGE ══════════════════════════ -->
+<div class="page fade-in" id="page-type">
+  <div class="page-header">
+    <h2>কী ধরনের আবেদন দরকার?</h2>
+    <p>তোমার সমস্যা বেছে নাও — বাকিটা আমরা সামলাবো</p>
+  </div>
+  <div class="type-grid">
+    <div class="type-card" onclick="selectType('admit')">
+      <div class="type-card-img tc-admit">📋</div>
+      <div class="type-card-badge">Most Popular</div>
+      <div class="type-card-body">
+        <div class="type-card-title">ভর্তিপত্র হারিয়েছি</div>
+        <div class="type-card-sub">পরীক্ষার হলে ঢোকার আগে স্যার ভর্তিপত্র চেয়ে বসেছেন, কিন্তু সেটা কোথায় কে জানে।</div>
+      </div>
+    </div>
+    <div class="type-card" onclick="selectType('fee')">
+      <div class="type-card-img tc-fee">🧾</div>
+      <div class="type-card-card-badge"></div>
+      <div class="type-card-body">
+        <div class="type-card-title">ব্যাংক রসিদ নেই</div>
+        <div class="type-card-sub">ফি জমা দিয়েছ কিন্তু রসিদ নেই — স্যার বিকল্প প্রমাণ হিসেবে আবেদন চাইছেন।</div>
+      </div>
+    </div>
+    <div class="type-card" onclick="selectType('id')">
+      <div class="type-card-img tc-id">🪪</div>
+      <div class="type-card-body">
+        <div class="type-card-title">পরিচয়পত্র ভুলে এসেছি</div>
+        <div class="type-card-sub">আজকে আইডি কার্ডটা বাসায় ফেলে এসেছ — স্যার ছাড়তে রাজি না।</div>
+      </div>
+    </div>
+    <div class="type-card" onclick="selectType('marksheet')">
+      <div class="type-card-img tc-mark">📊</div>
+      <div class="type-card-body">
+        <div class="type-card-title">সকল মার্কশিট দেখাতে হবে</div>
+        <div class="type-card-sub">৫ বছরের মার্কশিট একসাথে — চাওয়াটা একটু বাড়াবাড়ি, কিন্তু স্যার চাইলে কী করবে?</div>
+      </div>
+    </div>
+    <div class="type-card" onclick="selectType('late')">
+      <div class="type-card-img tc-late">⏰</div>
+      <div class="type-card-body">
+        <div class="type-card-title">দেরি করে এসেছি</div>
+        <div class="type-card-sub">বাস মিস হয়েছে, ট্র্যাফিক জ্যাম ছিল — স্যার দরজায় দাঁড় করিয়ে আবেদন চাইছেন।</div>
+      </div>
+    </div>
+    <div class="type-card" onclick="selectType('absent')">
+      <div class="type-card-img tc-absent">🙈</div>
+      <div class="type-card-body">
+        <div class="type-card-title">আগের দিন অনুপস্থিত ছিলাম</div>
+        <div class="type-card-sub">কাল আসতে পারোনি — আজকে স্যার ক্লাসে ঢুকতে দেওয়ার আগে কারণ দর্শাও চাইছেন।</div>
+      </div>
+    </div>
+    <div class="type-card" onclick="selectType('dress')">
+      <div class="type-card-img tc-dress">👔</div>
+      <div class="type-card-body">
+        <div class="type-card-title">ড্রেস কোড মানিনি</div>
+        <div class="type-card-sub">ইউনিফর্ম ছাড়া এসেছ — স্যার গেটেই আটকে রেখে আবেদন চাইছেন।</div>
+      </div>
+    </div>
+    <div class="type-card" onclick="selectType('book')">
+      <div class="type-card-img tc-book">📚</div>
+      <div class="type-card-body">
+        <div class="type-card-title">পাঠ্যবই আনিনি</div>
+        <div class="type-card-sub">আজকের বই ঘরে রেখে এসেছ — স্যার বলছেন আবেদন না দিলে ক্লাসে থাকতে দেবেন না।</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ FORM PAGE ══════════════════════════ -->
+<div class="page fade-in" id="page-form">
+  <div class="form-wrap">
+    <button class="form-back" onclick="goPage('type')">← পিছনে যাও</button>
+    <h2 class="form-title">আবেদনের তথ্য দিন</h2>
+    <p class="form-subtitle">সঠিক তথ্য দিন — আবেদনটি স্বয়ংক্রিয়ভাবে তৈরি হবে</p>
+    <div class="form-selected-type" id="selected-type-label">📋 ভর্তিপত্র হারিয়েছি</div>
+
+    <div class="form-section">
+      <div class="form-section-label">ব্যক্তিগত তথ্য</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">পূর্ণ নাম *</label>
+          <input class="form-input" id="f-name" type="text" placeholder="মোঃ আব্দুল্লাহ আল মামুন">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ছাত্র আইডি / রোল নম্বর *</label>
+          <input class="form-input" id="f-id" type="text" placeholder="২০২৩-০৪৫">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">সেশন *</label>
+          <input class="form-input" id="f-session" type="text" placeholder="২০২৩–২০২৪">
+        </div>
+        <div class="form-group">
+          <label class="form-label">মোবাইল নম্বর</label>
+          <input class="form-input" id="f-phone" type="tel" placeholder="০১৭XXXXXXXX">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">পিতার নাম *</label>
+          <input class="form-input" id="f-father" type="text" placeholder="মোঃ রফিকুল ইসলাম">
+        </div>
+        <div class="form-group">
+          <label class="form-label">মাতার নাম</label>
+          <input class="form-input" id="f-mother" type="text" placeholder="মোসাম্মৎ রাহেলা বেগম">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-label">ঠিকানা</div>
+      <div class="form-group">
+        <label class="form-label">বর্তমান ঠিকানা *</label>
+        <input class="form-input" id="f-present-addr" type="text" placeholder="বাসা-১২, রোড-৩, মিরপুর-১, ঢাকা">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">স্থায়ী ঠিকানা</label>
+          <input class="form-input" id="f-perm-addr" type="text" placeholder="গ্রাম: কালিপুর, থানা: গাজীপুর">
+        </div>
+        <div class="form-group">
+          <label class="form-label">পোস্টাল কোড</label>
+          <input class="form-input" id="f-postal" type="text" placeholder="১২১৬">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-label">আবেদনের কারণ</div>
+      <div class="form-group">
+        <label class="form-label">বিস্তারিত কারণ (ঐচ্ছিক)</label>
+        <textarea class="form-textarea" id="f-reason" placeholder="যেমন: গতকাল হঠাৎ অসুস্থ হয়ে পড়ায় পরীক্ষায় উপস্থিত হতে পারিনি..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-label">ছবি ও স্বাক্ষর</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">পাসপোর্ট সাইজ ছবি</label>
+          <div class="upload-zone" onclick="document.getElementById('upload-photo').click()">
+            <input type="file" id="upload-photo" accept="image/*" onchange="previewImg(this,'prev-photo')">
+            <div class="upload-icon">📷</div>
+            <div class="upload-label">ক্লিক করে ছবি আপলোড করুন</div>
+            <div class="upload-hint">JPG, PNG — সর্বোচ্চ ৫MB</div>
+            <img class="upload-preview" id="prev-photo" alt="photo">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">স্বাক্ষর</label>
+          <div class="upload-zone" onclick="document.getElementById('upload-sign').click()">
+            <input type="file" id="upload-sign" accept="image/*" onchange="previewImg(this,'prev-sign')">
+            <div class="upload-icon">✍️</div>
+            <div class="upload-label">ক্লিক করে স্বাক্ষর আপলোড করুন</div>
+            <div class="upload-hint">সাদা পটভূমিতে স্বাক্ষর</div>
+            <img class="upload-preview" id="prev-sign" alt="sign">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="form-submit" onclick="generatePreview()">আবেদন প্রিভিউ দেখুন →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ PREVIEW PAGE ══════════════════════════ -->
+<div class="page fade-in" id="page-preview">
+  <div class="preview-wrap">
+    <div class="preview-actions">
+      <button class="action-btn secondary" onclick="goPage('form')">← সংশোধন করুন</button>
+      <button class="action-btn primary" onclick="printDoc()">🖨️ প্রিন্ট করুন</button>
+      <button class="action-btn secondary" onclick="downloadDoc()">⬇️ ডাউনলোড করুন</button>
+    </div>
+    <div class="preview-doc" id="doc-content"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ PROFILE PAGE ══════════════════════════ -->
+<div class="page fade-in" id="page-profile">
+  <div class="profile-wrap">
+    <div class="profile-header-card">
+      <div class="profile-avatar">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="35" r="22" fill="#1a3a3a"/>
+          <ellipse cx="50" cy="90" rx="34" ry="28" fill="#1a3a3a"/>
+          <circle cx="50" cy="35" r="18" fill="#2ec4c4" opacity="0.7"/>
+          <circle cx="43" cy="32" r="3" fill="#0d1f1f"/>
+          <circle cx="57" cy="32" r="3" fill="#0d1f1f"/>
+          <path d="M43 42 Q50 49 57 42" stroke="#0d1f1f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">মোঃ আব্দুল্লাহ আল মামুন</div>
+        <div class="profile-meta">
+          <span class="profile-chip">🎓 শ্রেণি: দশম</span>
+          <span class="profile-chip">🪪 রোল: ১৫</span>
+          <span class="profile-chip">📅 সেশন: ২০২৩–২৪</span>
+          <span class="profile-chip">📍 ঢাকা</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-stats-row">
+      <div class="profile-stat">
+        <div class="profile-stat-num">12</div>
+        <div class="profile-stat-label">মোট আবেদন</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-num" style="color:var(--red)">4</div>
+        <div class="profile-stat-label">বাতিল / ছিঁড়ে ফেলা</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-num" style="color:var(--green)">8</div>
+        <div class="profile-stat-label">গৃহীত আবেদন</div>
+      </div>
+    </div>
+
+    <div class="contrib-section">
+      <div class="contrib-title">আবেদনের ইতিহাস</div>
+      <div class="contrib-sub">গত ১ বছরে জমা দেওয়া আবেদনের গ্রিড (GitHub-স্টাইলে)</div>
+      <div class="contrib-grid" id="contrib-grid"></div>
+    </div>
+
+    <div class="recent-apps" style="margin-top:24px">
+      <div class="recent-apps-header"><h3>সাম্প্রতিক আবেদন</h3></div>
+      <div class="recent-app-row">
+        <div class="recent-app-icon">📋</div>
+        <div class="recent-app-info">
+          <div class="recent-app-name">ভর্তিপত্র হারানোর আবেদন</div>
+          <div class="recent-app-date">2025-03-14</div>
+        </div>
+        <span class="status-pill status-accepted">Accepted</span>
+      </div>
+      <div class="recent-app-row">
+        <div class="recent-app-icon">⏰</div>
+        <div class="recent-app-info">
+          <div class="recent-app-name">দেরিতে আসার কারণ দর্শানো</div>
+          <div class="recent-app-date">2025-02-28</div>
+        </div>
+        <span class="status-pill status-ripped">Ripped</span>
+      </div>
+      <div class="recent-app-row">
+        <div class="recent-app-icon">🧾</div>
+        <div class="recent-app-info">
+          <div class="recent-app-name">ব্যাংক রসিদ বিকল্প আবেদন</div>
+          <div class="recent-app-date">2025-02-10</div>
+        </div>
+        <span class="status-pill status-pending">Pending</span>
+      </div>
+      <div class="recent-app-row">
+        <div class="recent-app-icon">🪪</div>
+        <div class="recent-app-info">
+          <div class="recent-app-name">পরিচয়পত্র ভুলে আসার আবেদন</div>
+          <div class="recent-app-date">2025-01-22</div>
+        </div>
+        <span class="status-pill status-rejected">Rejected</span>
+      </div>
+      <div class="recent-app-row">
+        <div class="recent-app-icon">📚</div>
+        <div class="recent-app-info">
+          <div class="recent-app-name">পাঠ্যবই আনিনি — অনুমতির আবেদন</div>
+          <div class="recent-app-date">2024-12-05</div>
+        </div>
+        <span class="status-pill status-accepted">Accepted</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── APP STATE ──
+let currentType = 'admit';
+let photoDataUrl = null;
+let signDataUrl = null;
+
+const typeLabels = {
+  admit: '📋 ভর্তিপত্র হারিয়েছি',
+  fee: '🧾 ব্যাংক রসিদ নেই',
+  id: '🪪 পরিচয়পত্র ভুলে এসেছি',
+  marksheet: '📊 সকল মার্কশিট দেখাতে হবে',
+  late: '⏰ দেরি করে এসেছি',
+  absent: '🙈 আগের দিন অনুপস্থিত ছিলাম',
+  dress: '👔 ড্রেস কোড মানিনি',
+  book: '📚 পাঠ্যবই আনিনি',
+};
+
+// ── LOADING ──
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loading').classList.add('hide');
+    animateStats();
+    buildContribGrid();
+  }, 2000);
+});
+
+// ── COUNTER ANIMATION ──
+function animateStats() {
+  const targets = { 'cnt-apps':312,'cnt-sent':87,'cnt-admits':143,'cnt-fees':96,'cnt-rejected':58,'cnt-ripped':23 };
+  Object.entries(targets).forEach(([id, target]) => {
+    let current = 0;
+    const el = document.getElementById(id);
+    const step = Math.ceil(target / 40);
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current;
+      if (current >= target) clearInterval(timer);
+    }, 40);
+  });
+}
+
+// ── NAVIGATION ──
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  // add fade-in
+  const el = document.getElementById('page-' + name);
+  el.classList.remove('fade-in');
+  void el.offsetWidth;
+  el.classList.add('fade-in');
+  window.scrollTo(0, 0);
+
+  document.getElementById('nav-home').classList.toggle('active', name === 'landing');
+  document.getElementById('nav-profile').classList.toggle('active', name === 'profile');
+
+  const titles = {
+    landing: 'MAA এর দোয়া — Home',
+    type: 'আবেদনের ধরন বেছে নিন',
+    form: 'তথ্য পূরণ করুন',
+    preview: 'আবেদন প্রিভিউ',
+    profile: 'আমার প্রোফাইল',
+  };
+  document.getElementById('titlebar-title').textContent = titles[name] || '';
+}
+
+// ── TYPE SELECTION ──
+function selectType(type) {
+  currentType = type;
+  document.getElementById('selected-type-label').textContent = typeLabels[type];
+  goPage('form');
+}
+
+// ── IMAGE PREVIEW ──
+function previewImg(input, previewId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById(previewId);
+    img.src = e.target.result;
+    img.style.display = 'block';
+    if (previewId === 'prev-photo') photoDataUrl = e.target.result;
+    else signDataUrl = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── APPLICATION TEXTS ──
+const appTexts = {
+  admit: {
+    subject: 'প্রবেশপত্র হারানোর কারণে পরীক্ষায় অংশগ্রহণের অনুমতি প্রার্থনায়',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার শিক্ষা প্রতিষ্ঠানের একজন নিয়মিত ছাত্র/ছাত্রী। আসন্ন পরীক্ষায় অংশগ্রহণের জন্য প্রস্তুতি থাকা সত্ত্বেও আমার প্রবেশপত্রটি অনিচ্ছাকৃতভাবে হারিয়ে গেছে।
+
+উল্লেখ্য যে, আমি নিয়মিত ক্লাসে উপস্থিত থাকি এবং একজন আদর্শ ছাত্র হিসেবে সকল দায়িত্ব পালন করে আসছি। প্রবেশপত্রটি হারিয়ে যাওয়া একটি অনিচ্ছাকৃত ঘটনা এবং এর জন্য আমি আন্তরিকভাবে দুঃখিত।
+
+অতএব, মহোদয়ের নিকট বিনীত আবেদন, আমাকে প্রবেশপত্র ব্যতীত পরীক্ষায় অংশগ্রহণের অনুমতি প্রদান করলে চিরকৃতজ্ঞ থাকব।`,
+  },
+  fee: {
+    subject: 'ব্যাংক রসিদ ব্যতীত পরীক্ষায় অংশগ্রহণের অনুমতি প্রার্থনায়',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার শিক্ষা প্রতিষ্ঠানের নিয়মিত ছাত্র/ছাত্রী এবং নির্ধারিত সময়ের মধ্যে যথারীতি পরীক্ষার ফি প্রদান করেছি। তবে অত্যন্ত দুঃখের সাথে জানাচ্ছি যে ব্যাংক কর্তৃক প্রদত্ত রসিদটি আমার কাছে বর্তমানে নেই।
+
+ফি পরিশোধের বিষয়টি ব্যাংকের রেকর্ডে সংরক্ষিত আছে এবং প্রয়োজনে যাচাই করা সম্ভব। এই অপ্রীতিকর পরিস্থিতি সম্পূর্ণ অনিচ্ছাকৃত।
+
+অতএব, মহোদয়ের সমীপে আকুল আবেদন, বর্তমান পরিস্থিতি বিবেচনা করে আমাকে পরীক্ষায় অংশগ্রহণের সুযোগ দিলে আমি চিরকৃতজ্ঞ থাকব।`,
+  },
+  id: {
+    subject: 'পরিচয়পত্র বিহীন প্রতিষ্ঠানে প্রবেশের অনুমতি প্রার্থনায়',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার প্রতিষ্ঠানের একজন নিয়মিত ছাত্র/ছাত্রী। আজ অত্যন্ত অনিচ্ছাকৃতভাবে আমার শিক্ষার্থী পরিচয়পত্রটি বাসায় ফেলে এসেছি।
+
+আমি এই প্রতিষ্ঠানে নিয়মিত অধ্যয়ন করি এবং সকল শিক্ষক, কর্মচারী এবং সহপাঠীরা আমাকে চেনেন। পরিচয়পত্রটি ভুলে আসা সম্পূর্ণ অনিচ্ছাকৃত এবং এ ধরনের ঘটনা পুনরায় না ঘটার জন্য আমি সচেষ্ট থাকব।
+
+অতএব, মহোদয়ের নিকট প্রার্থনা, আজকের জন্য পরিচয়পত্র ব্যতীত প্রতিষ্ঠানে প্রবেশ ও ক্লাসে অংশগ্রহণের অনুমতি প্রদান করলে বাধিত হব।`,
+  },
+  marksheet: {
+    subject: 'পাঁচ বছরের মার্কশিট উপস্থাপনে অপারগতার বিষয়ে আবেদন',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার প্রতিষ্ঠানের একজন নিয়মিত ছাত্র/ছাত্রী। আপনি গত পাঁচ বছরের সকল মার্কশিট একত্রে উপস্থাপন করতে বলেছেন।
+
+আমার সকল মার্কশিট বাসায় সংরক্ষিত আছে এবং যথাসময়ে আমি সেগুলো আপনার সম্মুখে উপস্থাপন করব। তবে আজ হঠাৎ করে এত বছরের সকল নথি একসাথে নিয়ে আসা সম্ভব হয়নি বলে আমি আন্তরিকভাবে দুঃখিত।
+
+অতএব, মহোদয়ের নিকট বিনীত আবেদন, আমাকে যথোপযুক্ত সময় প্রদান করলে আমি অতিসত্বর সকল মার্কশিট উপস্থাপন করব। আপনার সদয় বিবেচনা প্রার্থনা করছি।`,
+  },
+  late: {
+    subject: 'বিদ্যালয়ে দেরিতে উপস্থিতির কারণ দর্শানো প্রসঙ্গে',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার প্রতিষ্ঠানের একজন নিয়মিত ছাত্র/ছাত্রী। আজ নির্ধারিত সময়ের পরে প্রতিষ্ঠানে উপস্থিত হওয়ার জন্য আমি আন্তরিকভাবে দুঃখিত এবং ক্ষমাপ্রার্থী।
+
+যানজট এবং পরিবহন সমস্যার কারণে নির্ধারিত সময়ে পৌঁছানো আমার পক্ষে সম্ভব হয়নি। এটি সম্পূর্ণ অনিচ্ছাকৃত ঘটনা এবং আমি প্রতিশ্রুতি দিচ্ছি যে ভবিষ্যতে এ ধরনের পরিস্থিতি এড়াতে আগে থেকে রওয়ানা দেব।
+
+অতএব, মহোদয়ের নিকট আকুল প্রার্থনা, আমার বিলম্বকে ক্ষমা দৃষ্টিতে দেখে ক্লাসে অংশগ্রহণের সুযোগ দিলে বাধিত হব।`,
+  },
+  absent: {
+    subject: 'গত দিনের অনুপস্থিতির কারণ দর্শানো প্রসঙ্গে',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার প্রতিষ্ঠানের একজন নিয়মিত ছাত্র/ছাত্রী। গতকাল শ্রেণিতে অনুপস্থিত থাকার জন্য আমি আন্তরিকভাবে দুঃখিত ও ক্ষমাপ্রার্থী।
+
+হঠাৎ অসুস্থতা এবং শারীরিক অসুস্থতার কারণে গতকাল প্রতিষ্ঠানে উপস্থিত হওয়া আমার পক্ষে সম্ভব হয়নি। এটি একটি অনিচ্ছাকৃত ঘটনা এবং আমি প্রতিশ্রুতি দিচ্ছি যে ভবিষ্যতে নিয়মিত উপস্থিত থাকব।
+
+অতএব, মহোদয়ের কাছে বিনীত প্রার্থনা, গতকালের অনুপস্থিতিকে ছুটি হিসেবে গণ্য করে আজ ক্লাসে অংশগ্রহণের সুযোগ দিলে চিরকৃতজ্ঞ থাকব।`,
+  },
+  dress: {
+    subject: 'প্রাতিষ্ঠানিক পোশাক ব্যতীত উপস্থিতির বিষয়ে ক্ষমা প্রার্থনা',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার প্রতিষ্ঠানের একজন নিয়মিত ছাত্র/ছাত্রী। আজ প্রাতিষ্ঠানিক ইউনিফর্ম পরিধান না করেই উপস্থিত হওয়ার জন্য আন্তরিকভাবে ক্ষমা চাইছি।
+
+আমার নির্ধারিত পোশাকটি ধোয়ার পরে এখনও শুকায়নি/অপ্রত্যাশিত কারণে পরিধান করা সম্ভব হয়নি। এটি সম্পূর্ণ অনিচ্ছাকৃত এবং আমি প্রতিশ্রুতি দিচ্ছি যে আগামীকাল থেকে সঠিক পোশাকে উপস্থিত হব।
+
+অতএব, মহোদয়ের নিকট বিনীত প্রার্থনা, আজকের দিনের জন্য আমাকে ক্ষমা করে ক্লাসে অংশগ্রহণের সুযোগ দিলে বাধিত হব।`,
+  },
+  book: {
+    subject: 'পাঠ্যপুস্তক ব্যতীত ক্লাসে অংশগ্রহণের অনুমতি প্রার্থনায়',
+    body: `বিনীত নিবেদন এই যে, আমি আপনার প্রতিষ্ঠানের একজন নিয়মিত ও মনোযোগী ছাত্র/ছাত্রী। আজ অত্যন্ত অনিচ্ছাকৃতভাবে আজকের ক্লাসের পাঠ্যবইটি বাসায় রেখে এসেছি।
+
+বিষয়টি সম্পূর্ণ ভুলবশত ঘটেছে এবং এ জন্য আমি আন্তরিকভাবে দুঃখিত। পাশের বন্ধুর বই শেয়ার করে বা মনোযোগ দিয়ে বোর্ডের দিকে তাকিয়ে আমি ক্লাসে সক্রিয়ভাবে অংশগ্রহণ করতে সক্ষম হব।
+
+অতএব, মহোদয়ের সমীপে আবেদন, আমাকে আজকের ক্লাসে বই ছাড়া অংশগ্রহণের অনুমতি দিলে এবং বিষয়টিকে ক্ষমা দৃষ্টিতে দেখলে কৃতজ্ঞ থাকব।`,
+  },
+};
+
+// ── GENERATE PREVIEW ──
+function generatePreview() {
+  const name = document.getElementById('f-name').value || 'নাম পূরণ করুন';
+  const id = document.getElementById('f-id').value || '---';
+  const session = document.getElementById('f-session').value || '---';
+  const phone = document.getElementById('f-phone').value || '---';
+  const father = document.getElementById('f-father').value || '---';
+  const mother = document.getElementById('f-mother').value || '---';
+  const presentAddr = document.getElementById('f-present-addr').value || '---';
+  const permAddr = document.getElementById('f-perm-addr').value || '---';
+  const postal = document.getElementById('f-postal').value || '---';
+  const customReason = document.getElementById('f-reason').value;
+
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('bn-BD', { day:'numeric', month:'long', year:'numeric' });
+  const typeData = appTexts[currentType] || appTexts.admit;
+
+  const photoEl = photoDataUrl
+    ? `<img src="${photoDataUrl}" style="width:100%;height:100%;object-fit:cover;">`
+    : '<div style="font-size:0.65rem;color:#999;text-align:center;padding:4px;">পাসপোর্ট<br>সাইজ<br>ছবি</div>';
+  const signEl = signDataUrl
+    ? `<img src="${signDataUrl}" style="max-width:100%;max-height:100%;object-fit:contain;">`
+    : '';
+
+  const extraReason = customReason ? `<p style="margin-top:10px;"><strong>অতিরিক্ত তথ্য:</strong> ${customReason}</p>` : '';
+
+  const doc = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <div style="width:80px;height:95px;border:1px solid #999;display:flex;align-items:center;justify-content:center;background:#f8f8f8;overflow:hidden;">
+        ${photoEl}
+      </div>
+    </div>
+    <div style="text-align:right;margin-bottom:24px;">${dateStr}</div>
+
+    <div style="margin-bottom:16px;">
+      <strong>বরাবর</strong><br>
+      প্রধান শিক্ষক / সংশ্লিষ্ট শিক্ষক<br>
+      শহীদ স্মৃতি সরকারি উচ্চ বিদ্যালয় ও কলেজ<br>
+      ঢাকা।
+    </div>
+
+    <div style="text-align:center;font-weight:bold;font-size:13pt;text-decoration:underline;margin:20px 0;">
+      বিষয়: ${typeData.subject}।
+    </div>
+
+    <div style="text-align:justify;">
+      <p>${typeData.body}</p>
+      ${extraReason}
+      <p>নিবেদক,</p>
+    </div>
+
+    <table style="width:100%;margin-top:24px;border-collapse:collapse;font-size:11pt;">
+      <tr>
+        <td style="padding:3px 0;width:40%;">নাম:</td>
+        <td style="padding:3px 0;"><strong>${name}</strong></td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;">ছাত্র আইডি / রোল:</td>
+        <td style="padding:3px 0;">${id}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;">সেশন:</td>
+        <td style="padding:3px 0;">${session}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;">পিতার নাম:</td>
+        <td style="padding:3px 0;">${father}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;">মাতার নাম:</td>
+        <td style="padding:3px 0;">${mother}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;">বর্তমান ঠিকানা:</td>
+        <td style="padding:3px 0;">${presentAddr}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;">স্থায়ী ঠিকানা:</td>
+        <td style="padding:3px 0;">${permAddr}, পোস্টাল: ${postal}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0;">মোবাইল:</td>
+        <td style="padding:3px 0;">${phone}</td>
+      </tr>
+    </table>
+
+    <div style="margin-top:48px;display:flex;justify-content:flex-end;">
+      <div style="text-align:center;">
+        <div style="width:120px;height:45px;border-bottom:1px solid #000;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          ${signEl}
+        </div>
+        <div style="margin-top:4px;font-size:10pt;">আবেদনকারীর স্বাক্ষর</div>
+        <div style="font-size:10pt;margin-top:2px;">${name}</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('doc-content').innerHTML = doc;
+  goPage('preview');
+}
+
+// ── PRINT ──
+function printDoc() {
+  showModal();
+  setTimeout(() => window.print(), 600);
+}
+
+// ── DOWNLOAD ──
+function downloadDoc() {
+  showModal();
+  setTimeout(() => {
+    const content = document.getElementById('doc-content').innerHTML;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:'Times New Roman',serif;font-size:12pt;padding:60px 72px;color:#000;line-height:1.8;max-width:700px;margin:auto;}table{width:100%;border-collapse:collapse;}</style>
+    </head><body>${content}</body></html>`;
+    const blob = new Blob([html], {type:'text/html'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'MAA_er_Doa_Application.html';
+    a.click();
+  }, 600);
+}
+
+// ── MODAL ──
+function showModal() {
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+// ── CONTRIB GRID ──
+function buildContribGrid() {
+  const grid = document.getElementById('contrib-grid');
+  if (!grid) return;
+  const total = 53 * 7;
+  const levels = [null, 'l1', 'l2', 'l3', 'l4'];
+  for (let i = 0; i < total; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'contrib-cell';
+    const r = Math.random();
+    if (r > 0.75) {
+      const lvl = levels[Math.floor(Math.random() * 4) + 1];
+      cell.classList.add(lvl);
+    }
+    grid.appendChild(cell);
+  }
+}
+</script>
+</body>
+</html>
